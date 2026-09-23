@@ -1,0 +1,43 @@
+-- Sytuacja, bóle i „dlaczego teraz” słowami klientów — materiał do copy reklam.
+-- Uruchom cały plik w Supabase → SQL Editor (Run). Zwraca jeden wynik.
+
+with labels(kind, code, label) as (
+  values
+    ('outcome', 'paid', 'Kupił i zapłacił'),
+    ('outcome', 'won_unpaid', 'Kupił, nie zapłacił'),
+    ('outcome', 'open', 'Decyzja otwarta'),
+    ('outcome', 'lost', 'Nie kupił'),
+    ('outcome', 'disqualified', 'Niezakwalifikowany'),
+    ('outcome', 'no_show', 'Nie pojawił się'),
+    ('dq', 'budget', 'Brak możliwości finansowych'),
+    ('dq', 'too_early', 'Za wczesny etap zakupowy'),
+    ('dq', 'wrong_profile', 'Nie ta grupa docelowa'),
+    ('dq', 'no_authority', 'Nie decyduje sam(a)'),
+    ('dq', 'no_problem', 'Brak realnego problemu'),
+    ('dq', 'other', 'Inne'),
+    ('objection', 'price', 'Cena / za drogo'),
+    ('objection', 'timing', 'Zły moment / brak czasu'),
+    ('objection', 'trust', 'Wątpliwości co do efektów'),
+    ('objection', 'partner', 'Musi skonsultować z kimś'),
+    ('objection', 'think', '„Muszę to przemyśleć”'),
+    ('objection', 'alternative', 'Rozważa inną opcję'),
+    ('objection', 'diy', 'Chce spróbować sam(a)'),
+    ('objection', 'none', 'Brak obiekcji'),
+    ('objection', 'other', 'Inna'),
+    ('materials', 'yes', 'Tak'),
+    ('materials', 'partly', 'Częściowo'),
+    ('materials', 'no', 'Nie'),
+    ('materials', 'not_sent', 'Nie wysłano')
+)
+select
+  r.report_date                                  as "Data",
+  c.prospect                                     as "Klient",
+  coalesce((select label from labels where kind = 'outcome' and code = c.outcome), c.outcome) as "Wynik",
+  c.lead_situation                               as "Sytuacja leada",
+  c.main_pains                                   as "Główne bóle",
+  c.why_now                                      as "Dlaczego teraz"
+from public.eod_calls c
+join public.eod_reports r on r.id = c.report_id
+where c.main_pains is not null
+order by r.report_date desc, c.position
+limit 200;

@@ -1,0 +1,42 @@
+-- Najczęstsze obiekcje (ostatnie 30 dni).
+-- Uruchom cały plik w Supabase → SQL Editor (Run). Zwraca jeden wynik.
+
+with labels(kind, code, label) as (
+  values
+    ('outcome', 'paid', 'Kupił i zapłacił'),
+    ('outcome', 'won_unpaid', 'Kupił, nie zapłacił'),
+    ('outcome', 'open', 'Decyzja otwarta'),
+    ('outcome', 'lost', 'Nie kupił'),
+    ('outcome', 'disqualified', 'Niezakwalifikowany'),
+    ('outcome', 'no_show', 'Nie pojawił się'),
+    ('dq', 'budget', 'Brak możliwości finansowych'),
+    ('dq', 'too_early', 'Za wczesny etap zakupowy'),
+    ('dq', 'wrong_profile', 'Nie ta grupa docelowa'),
+    ('dq', 'no_authority', 'Nie decyduje sam(a)'),
+    ('dq', 'no_problem', 'Brak realnego problemu'),
+    ('dq', 'other', 'Inne'),
+    ('objection', 'price', 'Cena / za drogo'),
+    ('objection', 'timing', 'Zły moment / brak czasu'),
+    ('objection', 'trust', 'Wątpliwości co do efektów'),
+    ('objection', 'partner', 'Musi skonsultować z kimś'),
+    ('objection', 'think', '„Muszę to przemyśleć”'),
+    ('objection', 'alternative', 'Rozważa inną opcję'),
+    ('objection', 'diy', 'Chce spróbować sam(a)'),
+    ('objection', 'none', 'Brak obiekcji'),
+    ('objection', 'other', 'Inna'),
+    ('materials', 'yes', 'Tak'),
+    ('materials', 'partly', 'Częściowo'),
+    ('materials', 'no', 'Nie'),
+    ('materials', 'not_sent', 'Nie wysłano')
+)
+select
+  coalesce(l.label, x)                                            as "Obiekcja",
+  count(*)                                                        as "Ile razy",
+  round(100.0 * count(*) / sum(count(*)) over (), 1)              as "% wskazań"
+from public.eod_calls c
+join public.eod_reports r on r.id = c.report_id
+cross join lateral unnest(c.objections) as x
+left join labels l on l.kind = 'objection' and l.code = x
+where r.report_date >= current_date - 30
+group by 1
+order by 2 desc;
