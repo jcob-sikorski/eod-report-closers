@@ -37,7 +37,7 @@ create table if not exists public.eod_calls (
   position smallint not null,                       -- order within the report (1, 2, …)
 
   prospect text not null,                           -- imię/nazwisko lub ID w CRM
-  outcome text not null check (outcome in ('paid','won_unpaid','open','lost','disqualified','no_show')),
+  outcome text not null check (outcome in ('paid','open','lost','disqualified','no_show')),
   no_show_note text,
 
   fit_score smallint check (fit_score between 1 and 5),
@@ -89,6 +89,12 @@ begin
     alter table public.eod_calls drop column main_objection;
   end if;
 end $$;
+
+-- v3.1: "Kupił, nie zapłacił" (won_unpaid) removed. Any leftover rows become "open".
+update public.eod_calls set outcome = 'open' where outcome = 'won_unpaid';
+alter table public.eod_calls drop constraint if exists eod_calls_outcome_check;
+alter table public.eod_calls add constraint eod_calls_outcome_check
+  check (outcome in ('paid','open','lost','disqualified','no_show'));
 
 drop index if exists public.eod_calls_source_idx;
 create index if not exists eod_reports_report_date_idx on public.eod_reports (report_date desc);
@@ -164,12 +170,12 @@ select
   count(*) filter (where c.outcome <> 'no_show')                  as calls_held,
   count(*) filter (where c.outcome = 'no_show')                   as no_shows,
   count(*) filter (where c.outcome = 'disqualified')              as disqualified,
-  count(*) filter (where c.outcome in ('paid','won_unpaid'))      as won,
+  count(*) filter (where c.outcome = 'paid')                      as won,
   count(*) filter (where c.outcome = 'paid')                      as paid,
   count(*) filter (where c.outcome = 'open')                      as open,
   count(*) filter (where c.outcome = 'lost')                      as lost,
   round(100.0 * count(*) filter (where c.outcome <> 'no_show') / count(*), 1)                          as show_rate_pct,
-  round(100.0 * count(*) filter (where c.outcome in ('paid','won_unpaid'))
+  round(100.0 * count(*) filter (where c.outcome = 'paid')
         / nullif(count(*) filter (where c.outcome <> 'no_show'), 0), 1)                                 as close_rate_pct,
   round(avg(c.fit_score), 2)                                      as avg_fit,
   round(avg(c.intent_score), 2)                                   as avg_intent

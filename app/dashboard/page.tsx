@@ -18,7 +18,6 @@ export const metadata: Metadata = { title: "Dashboard EOD — Closerzy" };
 
 const OUTCOME_TONE: Record<string, string> = {
   paid: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  won_unpaid: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
   open: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-400",
   lost: "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400",
   disqualified: "border-zinc-500/30 bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",

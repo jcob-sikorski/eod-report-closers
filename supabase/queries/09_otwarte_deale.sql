@@ -1,10 +1,9 @@
--- Otwarte decyzje i niezapłacone zakupy z następnym krokiem.
+-- Otwarte decyzje z następnym krokiem.
 -- Uruchom cały plik w Supabase → SQL Editor (Run). Zwraca jeden wynik.
 
 with labels(kind, code, label) as (
   values
     ('outcome', 'paid', 'Kupił i zapłacił'),
-    ('outcome', 'won_unpaid', 'Kupił, nie zapłacił'),
     ('outcome', 'open', 'Decyzja otwarta'),
     ('outcome', 'lost', 'Nie kupił'),
     ('outcome', 'disqualified', 'Niezakwalifikowany'),
@@ -38,5 +37,5 @@ select
   c.next_step                                    as "Następny krok"
 from public.eod_calls c
 join public.eod_reports r on r.id = c.report_id
-where c.outcome in ('open','won_unpaid')
+where c.outcome = 'open'
 order by r.report_date desc, c.position;

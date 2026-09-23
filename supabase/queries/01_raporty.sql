@@ -6,7 +6,6 @@ select
   r.closer_name                                               as "Closer",
   count(c.id)                                                 as "Rozmowy",
   count(*) filter (where c.outcome = 'paid')                  as "Kupił i zapłacił",
-  count(*) filter (where c.outcome = 'won_unpaid')            as "Kupił, nie zapłacił",
   count(*) filter (where c.outcome = 'open')                  as "Otwarte",
   count(*) filter (where c.outcome = 'lost')                  as "Nie kupił",
   count(*) filter (where c.outcome = 'disqualified')          as "Niezakwalifikowani",

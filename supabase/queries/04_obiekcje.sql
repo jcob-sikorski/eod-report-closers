@@ -4,7 +4,6 @@
 with labels(kind, code, label) as (
   values
     ('outcome', 'paid', 'Kupił i zapłacił'),
-    ('outcome', 'won_unpaid', 'Kupił, nie zapłacił'),
     ('outcome', 'open', 'Decyzja otwarta'),
     ('outcome', 'lost', 'Nie kupił'),
     ('outcome', 'disqualified', 'Niezakwalifikowany'),

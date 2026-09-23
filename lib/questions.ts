@@ -11,7 +11,6 @@ export type Option = { value: string; label: string; exclusive?: boolean }; // e
 
 export const OUTCOMES: Option[] = [
   { value: "paid", label: "Kupił i zapłacił" },
-  { value: "won_unpaid", label: "Kupił, nie zapłacił" },
   { value: "open", label: "Decyzja otwarta" },
   { value: "lost", label: "Nie kupił" },
   { value: "disqualified", label: "Niezakwalifikowany" },
@@ -138,7 +137,7 @@ export const callFields: CallField[] = [
     label: "Obiekcje",
     hint: "Możesz zaznaczyć kilka.",
     showIf: objectionApplies,
-    required: (c) => outcomeIn(c, "open", "lost", "won_unpaid"),
+    required: (c) => outcomeIn(c, "open", "lost"),
   },
   {
     key: "objection_quote",
@@ -161,7 +160,7 @@ export const callFields: CallField[] = [
     label: "Czego brakowało leadowi przed spotkaniem, żeby kupił od razu?",
     hint: "Informacja, dowód, zaufanie, budżet, zgoda partnera…",
     showIf: (c) => held(c) && s(c, "outcome") !== "paid",
-    required: (c) => outcomeIn(c, "open", "lost", "won_unpaid"),
+    required: (c) => outcomeIn(c, "open", "lost"),
   },
 
   {
@@ -191,7 +190,7 @@ export const callFields: CallField[] = [
     label: "Jaki jest następny krok?",
     hint: "Co konkretnie, kto to robi i do kiedy.",
     showIf: held,
-    required: (c) => outcomeIn(c, "open", "won_unpaid"),
+    required: (c) => outcomeIn(c, "open"),
   },
 ];
 

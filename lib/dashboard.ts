@@ -144,7 +144,7 @@ export async function loadDashboard(range: RangeValue, closer: string | null): P
     [...(r.eod_calls ?? [])].sort((a, b) => a.position - b.position).map((c) => ({ ...c, r })),
   );
   const held = calls.filter((c) => c.outcome !== "no_show");
-  const won = calls.filter((c) => c.outcome === "paid" || c.outcome === "won_unpaid");
+  const won = calls.filter((c) => c.outcome === "paid");
   const dq = calls.filter((c) => c.outcome === "disqualified");
   const mismatchAsked = held.filter((c) => c.expectation_mismatch !== null);
   const mismatchYes = mismatchAsked.filter((c) => c.expectation_mismatch);
@@ -159,7 +159,7 @@ export async function loadDashboard(range: RangeValue, closer: string | null): P
     const p = byDay.get(d) ?? { date: d, booked: 0, held: 0, won: 0 };
     p.booked++;
     if (c.outcome !== "no_show") p.held++;
-    if (c.outcome === "paid" || c.outcome === "won_unpaid") p.won++;
+    if (c.outcome === "paid") p.won++;
     byDay.set(d, p);
   }
   const trend = [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
@@ -213,7 +213,7 @@ export async function loadDashboard(range: RangeValue, closer: string | null): P
       quotes: held.filter((c) => c.objection_quote).map((c) => item(c, c.objection_quote!, objectionsLabel(c.objections))),
       expectations: held.filter((c) => c.expectation_mismatch && c.expectation_mismatch_details).map((c) => item(c, c.expectation_mismatch_details!)),
       openDeals: calls
-        .filter((c) => c.outcome === "open" || c.outcome === "won_unpaid")
+        .filter((c) => c.outcome === "open")
         .map((c) => item(c, c.next_step ?? "— brak następnego kroku —", objectionsLabel(c.objections))),
       notes: reports.map((r) => ({
         id: r.id,

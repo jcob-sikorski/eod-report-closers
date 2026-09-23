@@ -24,7 +24,7 @@ Formularz Next.js (App Router), w którym closerzy na koniec dnia dodają **kart
 - `lib/questions.ts` — jedyne źródło prawdy: listy opcji (obiekcje, powody dyskwalifikacji, materiały), pola karty rozmowy, pytania na koniec dnia, warunki widoczności i walidacja.
   - **Obiekcje, powody dyskwalifikacji itd. możesz edytować tylko w tym pliku** — w bazie są zapisywane jako kody bez ograniczeń CHECK, więc nie trzeba migracji. Nie zmieniaj istniejących kodów (`value`), tylko etykiety, bo stare dane przestaną się zgadzać.
   - Kody wyników (`outcome`) są zablokowane w SQL, bo korzysta z nich widok statystyk.
-- Pola karty pokazują się zależnie od wyniku: przy „Nie pojawił się” tylko notatka; przy „Niezakwalifikowany” powody dyskwalifikacji zamiast obiekcji; obiekcje i „czego brakowało” są wymagane przy wynikach otwarty / nie kupił / nie zapłacił, a następny krok przy otwartym / niezapłaconym. Ukryte pola zapisują się jako `NULL`.
+- Pola karty pokazują się zależnie od wyniku: przy „Nie pojawił się” tylko notatka; przy „Niezakwalifikowany” powody dyskwalifikacji zamiast obiekcji; obiekcje i „czego brakowało” są wymagane przy wynikach otwarty / nie kupił, a następny krok przy otwartym. Ukryte pola zapisują się jako `NULL`.
 - `app/actions.ts` — Server Action: waliduje dane i wywołuje funkcję SQL `submit_eod_report`, która zapisuje raport i wszystkie rozmowy w jednej transakcji. Klucz sekretny nigdy nie trafia do przeglądarki.
 - Wersja robocza zapisuje się w `localStorage`, imię closera jest zapamiętywane.
 - RLS jest włączone bez polityk, a uprawnienia ma tylko `service_role` — tabele są niedostępne kluczem publicznym.
