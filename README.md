@@ -8,13 +8,14 @@ Formularz Next.js (App Router), w którym closerzy na koniec dnia dodają **kart
 2. Skopiuj `.env.example` do `.env.local` i uzupełnij:
    - `NEXT_PUBLIC_SUPABASE_URL` — Project Settings → API → Project URL
    - `SUPABASE_SECRET_KEY` — Project Settings → API Keys → Secret key (`sb_secret_…`) lub starszy `service_role`
+   - `DASHBOARD_PASSWORD` — hasło do `/dashboard` (bez niego dashboard jest zablokowany)
 3. `npm install && npm run dev` → http://localhost:3000
 4. Wyślij testowy raport i sprawdź zapis, uruchamiając `supabase/checks.sql` w SQL Editorze.
 
 ## Deploy na Vercel
 
 1. Wypchnij repo na GitHub i zaimportuj je w Vercel (framework wykryje się sam).
-2. W Settings → Environment Variables dodaj `NEXT_PUBLIC_SUPABASE_URL` i `SUPABASE_SECRET_KEY`.
+2. W Settings → Environment Variables dodaj `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY` i `DASHBOARD_PASSWORD`.
 3. Deploy.
 
 ## Jak to działa
@@ -27,6 +28,7 @@ Formularz Next.js (App Router), w którym closerzy na koniec dnia dodają **kart
 - `app/actions.ts` — Server Action: waliduje dane i wywołuje funkcję SQL `submit_eod_report`, która zapisuje raport i wszystkie rozmowy w jednej transakcji. Klucz sekretny nigdy nie trafia do przeglądarki.
 - Wersja robocza zapisuje się w `localStorage`, imię closera jest zapamiętywane.
 - RLS jest włączone bez polityk, a uprawnienia ma tylko `service_role` — tabele są niedostępne kluczem publicznym.
+- `/dashboard` — zestawienie dla marketingu (chronione hasłem `DASHBOARD_PASSWORD`, cookie na 30 dni): show rate, close rate, % niezakwalifikowanych, średnie oceny, trend dzienny, wyniki, obiekcje, powody dyskwalifikacji, materiały, rozjazd oczekiwań oraz zakładki z tekstami (bóle, czego brakowało, cytaty obiekcji, otwarte deale, wnioski closerów). Filtry: zakres dat (7/30/90 dni/wszystko) i closer. Logika agregacji: `lib/dashboard.ts`.
 - `supabase/checks.sql` — wszystkie odpowiedzi w czytelnej formie (jeden wynik — uruchom cały plik). `supabase/queries/` — osobne analizy dla marketingu, każdy plik zwraca jeden wynik (lejek, obiekcje, powody dyskwalifikacji, bóle klientów ich słowami, czego brakowało do zakupu, rozjazd oczekiwań, otwarte deale).
 
 > Formularz nie ma logowania — każdy z linkiem może wysłać raport. Jeśli potrzebujesz ochrony, dodaj Vercel Password Protection albo Supabase Auth.
