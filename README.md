@@ -2,6 +2,8 @@
 
 Formularz Next.js (App Router), w którym closerzy na koniec dnia dodają **kartę dla każdej rozmowy** (wynik, sytuacja leada, główne bóle, obiekcje, czego brakowało do zakupu, następny krok…) oraz **3 wnioski z dnia**. Dane trafiają do Supabase: `eod_reports` (1 wiersz na dzień) i `eod_calls` (1 wiersz na rozmowę). Widok `eod_daily_stats` liczy show rate i close rate per dzień i closer.
 
+**Role:** strona główna (`/`) to wybór roli — closerzy wypełniają raport pod `/closer`, setterzy pod `/setter`. Raport settera to liczby z dnia (połączenia, rozmowy, zakwalifikowani, umówieni, callbacki), jakość leadów, powody braku umówienia i 3 krótkie wnioski — jeden wiersz na settera i dzień w tabeli `setter_reports`. Dashboard (`/dashboard`) ma przełącznik **Closerzy | Setterzy**.
+
 ## Konfiguracja
 
 1. **Supabase** → SQL Editor → wklej i uruchom `supabase/schema.sql`.
@@ -28,6 +30,7 @@ Formularz Next.js (App Router), w którym closerzy na koniec dnia dodają **kart
 - `app/actions.ts` — Server Action: waliduje dane i wywołuje funkcję SQL `submit_eod_report`, która zapisuje raport i wszystkie rozmowy w jednej transakcji. Klucz sekretny nigdy nie trafia do przeglądarki.
 - Wersja robocza zapisuje się w `localStorage`, imię closera jest zapamiętywane.
 - RLS jest włączone bez polityk, a uprawnienia ma tylko `service_role` — tabele są niedostępne kluczem publicznym.
+- `lib/setter-questions.ts` — pytania i walidacja raportu settera (liczby muszą się zgadzać: rozmowy ≤ połączenia, umówieni/zakwalifikowani/callbacki ≤ rozmowy). `lib/setter-dashboard.ts` — agregacja dla widoku setterów.
 - `/dashboard` — zestawienie dla marketingu (chronione hasłem `DASHBOARD_PASSWORD`, cookie na 30 dni): show rate, close rate, % niezakwalifikowanych, średnie oceny, trend dzienny, wyniki, obiekcje, powody dyskwalifikacji, materiały, rozjazd oczekiwań oraz zakładki z tekstami (bóle, czego brakowało, cytaty obiekcji, otwarte deale, wnioski closerów). Filtry: zakres dat (7/30/90 dni/wszystko) i closer. Logika agregacji: `lib/dashboard.ts`.
 - `supabase/checks.sql` — wszystkie odpowiedzi w czytelnej formie (jeden wynik — uruchom cały plik). `supabase/queries/` — osobne analizy dla marketingu, każdy plik zwraca jeden wynik (lejek, obiekcje, powody dyskwalifikacji, bóle klientów ich słowami, czego brakowało do zakupu, rozjazd oczekiwań, otwarte deale).
 

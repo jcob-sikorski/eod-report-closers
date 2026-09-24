@@ -197,5 +197,43 @@ grant select on public.eod_daily_stats to service_role;
 revoke execute on function public.submit_eod_report(jsonb, jsonb) from public, anon, authenticated;
 grant execute on function public.submit_eod_report(jsonb, jsonb) to service_role;
 
+-- ─── Setters: one report per setter per day ─────────────────────────────────
+
+create table if not exists public.setter_reports (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  setter_name text not null,
+  report_date date not null,
+
+  new_leads integer not null check (new_leads >= 0),        -- nowe leady do obdzwonienia
+  dials integer not null check (dials >= 0),                -- wszystkie próby połączeń
+  connected integer not null check (connected >= 0),        -- odbyte rozmowy
+  qualified integer not null check (qualified >= 0),        -- spełniali kryteria
+  booked integer not null check (booked >= 0),              -- umówione rozmowy z closerem
+  callbacks integer not null check (callbacks >= 0),        -- prośby o kontakt w innym terminie
+
+  lead_quality smallint not null check (lead_quality between 1 and 5),
+  remembered_optin text not null,                           -- most | half | few
+  watched_vsl text not null,                                -- most | half | few | unknown
+  no_book_reasons text[],                                   -- codes, see NO_BOOK_REASONS
+
+  lead_voice text not null,                                 -- co mówili leady, ich słowami
+  marketing_insight text not null,
+  self_improvement text not null,
+  blockers text,
+
+  constraint setter_connected_le_dials check (connected <= dials),
+  constraint setter_qualified_le_connected check (qualified <= connected),
+  constraint setter_booked_le_connected check (booked <= connected),
+  constraint setter_callbacks_le_connected check (callbacks <= connected)
+);
+
+create index if not exists setter_reports_date_idx on public.setter_reports (report_date desc);
+create index if not exists setter_reports_setter_idx on public.setter_reports (setter_name, report_date desc);
+
+alter table public.setter_reports enable row level security;
+revoke all on public.setter_reports from anon, authenticated;
+grant select, insert, update, delete on public.setter_reports to service_role;
+
 -- Make the Data API pick up the changes immediately.
 notify pgrst, 'reload schema';

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { login, type LoginState } from "./actions";
 
-export default function LoginForm({ configured }: { configured: boolean }) {
+export default function LoginForm({ configured, next = "" }: { configured: boolean; next?: string }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
 
   return (
@@ -28,6 +28,7 @@ export default function LoginForm({ configured }: { configured: boolean }) {
       {configured && (
         <CardContent>
           <form action={action} className="space-y-4">
+            <input type="hidden" name="next" value={next} />
             <Field data-invalid={!!state.error}>
               <FieldLabel htmlFor="password">Hasło</FieldLabel>
               <Input id="password" name="password" type="password" autoComplete="current-password" autoFocus required aria-invalid={!!state.error} />

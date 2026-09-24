@@ -75,18 +75,57 @@ export function BarList({
   );
 }
 
-// ─── Trend: show rate & close rate per day ─────────────────────────────────
+// ─── Trend: two rates per day ──────────────────────────────────────────────
 // Two series on one 0–100% axis. Legend always shown; end labels when they
 // don't collide; crosshair snaps to the nearest day; table view below.
+// `variant` picks the pair of rates (closers: show/close, setters: connect/booking).
 
-type Point = { date: string; booked: number; held: number; won: number };
+type Point = { date: string } & Record<string, number | string>;
 
-const SERIES = [
-  { key: "show", label: "Show rate", color: "var(--series-1)", value: (p: Point) => (p.booked ? (100 * p.held) / p.booked : null) },
-  { key: "close", label: "Close rate", color: "var(--series-2)", value: (p: Point) => (p.held ? (100 * p.won) / p.held : null) },
-] as const;
+type Variant = {
+  aria: string;
+  series: { key: string; label: string; color: string; num: string; den: string }[];
+  counts: { key: string; label: string }[];
+};
 
-export function TrendChart({ points }: { points: Point[] }) {
+const VARIANTS = {
+  closer: {
+    aria: "Show rate i close rate w kolejnych dniach",
+    series: [
+      { key: "show", label: "Show rate", color: "var(--series-1)", num: "held", den: "booked" },
+      { key: "close", label: "Close rate", color: "var(--series-2)", num: "won", den: "held" },
+    ],
+    counts: [
+      { key: "booked", label: "Umówione" },
+      { key: "held", label: "Odbyte" },
+      { key: "won", label: "Sprzedaż" },
+    ],
+  },
+  setter: {
+    aria: "Connect rate i booking rate w kolejnych dniach",
+    series: [
+      { key: "connect", label: "Connect rate", color: "var(--series-1)", num: "connected", den: "dials" },
+      { key: "booking", label: "Booking rate", color: "var(--series-2)", num: "booked", den: "connected" },
+    ],
+    counts: [
+      { key: "dials", label: "Połączenia" },
+      { key: "connected", label: "Rozmowy" },
+      { key: "booked", label: "Umówione" },
+    ],
+  },
+} satisfies Record<string, Variant>;
+
+const numOf = (p: Point, k: string) => (typeof p[k] === "number" ? (p[k] as number) : 0);
+
+export function TrendChart({ points, variant = "closer" }: { points: Point[]; variant?: keyof typeof VARIANTS }) {
+  const V: Variant = VARIANTS[variant];
+  const SERIES = V.series.map((s) => ({
+    ...s,
+    value: (p: Point) => {
+      const den = numOf(p, s.den);
+      return den ? (100 * numOf(p, s.num)) / den : null;
+    },
+  }));
   const wrap = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(320);
   const [idx, setIdx] = useState<number | null>(null);
@@ -123,7 +162,7 @@ export function TrendChart({ points }: { points: Point[] }) {
         return d;
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [points, w],
+    [points, w, variant],
   );
 
   if (!points.length) return <p className="text-muted-foreground py-6 text-sm">Brak danych w tym okresie.</p>;
@@ -157,7 +196,7 @@ export function TrendChart({ points }: { points: Point[] }) {
           width={w}
           height={H}
           role="img"
-          aria-label="Show rate i close rate w kolejnych dniach"
+          aria-label={V.aria}
           tabIndex={0}
           className="block touch-none outline-none"
           onPointerMove={(e) => setIdx(nearest(e.clientX))}
@@ -232,7 +271,7 @@ export function TrendChart({ points }: { points: Point[] }) {
               </div>
             ))}
             <div className="text-muted-foreground mt-1.5 border-t pt-1.5 tabular-nums">
-              {hovered.booked} umówione · {hovered.held} odbyte · {hovered.won} sprzedaż
+              {V.counts.map((c) => `${numOf(hovered, c.key)} ${c.label.toLowerCase()}`).join(" · ")}
             </div>
           </div>
         )}
@@ -245,22 +284,24 @@ export function TrendChart({ points }: { points: Point[] }) {
             <thead className="bg-muted/50 text-muted-foreground sticky top-0">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">Dzień</th>
-                <th className="px-3 py-2 text-right font-medium">Umówione</th>
-                <th className="px-3 py-2 text-right font-medium">Odbyte</th>
-                <th className="px-3 py-2 text-right font-medium">Sprzedaż</th>
-                <th className="px-3 py-2 text-right font-medium">Show rate</th>
-                <th className="px-3 py-2 text-right font-medium">Close rate</th>
+                {V.counts.map((c) => (
+                  <th key={c.key} className="px-3 py-2 text-right font-medium">{c.label}</th>
+                ))}
+                {SERIES.map((s) => (
+                  <th key={s.key} className="px-3 py-2 text-right font-medium">{s.label}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {[...points].reverse().map((p) => (
                 <tr key={p.date} className="border-t">
                   <td className="px-3 py-1.5">{p.date}</td>
-                  <td className="px-3 py-1.5 text-right">{p.booked}</td>
-                  <td className="px-3 py-1.5 text-right">{p.held}</td>
-                  <td className="px-3 py-1.5 text-right">{p.won}</td>
-                  <td className="px-3 py-1.5 text-right">{fmtPct(SERIES[0].value(p))}</td>
-                  <td className="px-3 py-1.5 text-right">{fmtPct(SERIES[1].value(p))}</td>
+                  {V.counts.map((c) => (
+                    <td key={c.key} className="px-3 py-1.5 text-right">{numOf(p, c.key)}</td>
+                  ))}
+                  {SERIES.map((s) => (
+                    <td key={s.key} className="px-3 py-1.5 text-right">{fmtPct(s.value(p))}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>

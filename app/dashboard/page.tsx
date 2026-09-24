@@ -6,51 +6,46 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isAuthed } from "@/lib/dashboard-auth";
-import { RANGES, loadDashboard, type RangeValue, type TextItem } from "@/lib/dashboard";
-import { cn } from "@/lib/utils";
+import { RANGES, loadDashboard, type RangeValue } from "@/lib/dashboard";
+import { loadSetterDashboard } from "@/lib/setter-dashboard";
 import { logout } from "./actions";
 import { BarList, TrendChart } from "./charts";
 import Filters from "./Filters";
 import LoginForm from "./LoginForm";
+import { ChartCard, Feed, Stat, num, pct, plDate } from "./parts";
+import SettersView from "./SettersView";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Dashboard EOD — Closerzy" };
-
-const OUTCOME_TONE: Record<string, string> = {
-  paid: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  open: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-400",
-  lost: "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400",
-  disqualified: "border-zinc-500/30 bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
-  no_show: "border-zinc-500/30 bg-zinc-500/10 text-zinc-500",
-};
-
-const pct = (v: number | null) => (v === null ? "—" : `${Math.round(v)}%`);
-const num = (v: number | null, d = 1) => (v === null ? "—" : v.toFixed(d).replace(".", ","));
-const plDate = (iso: string) => {
-  const [y, m, d] = iso.split("-");
-  return `${d}.${m}.${y}`;
-};
+export const metadata: Metadata = { title: "Dashboard EOD" };
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string; closer?: string }>;
+  searchParams: Promise<{ range?: string; view?: string; person?: string; closer?: string }>;
 }) {
   if (!(await isAuthed())) {
+    const q = new URLSearchParams(
+      Object.entries(await searchParams).filter((e): e is [string, string] => typeof e[1] === "string"),
+    ).toString();
     return (
       <main className="flex min-h-dvh items-center px-4 py-16">
-        <LoginForm configured={!!process.env.DASHBOARD_PASSWORD} />
+        <LoginForm configured={!!process.env.DASHBOARD_PASSWORD} next={q ? `?${q}` : ""} />
       </main>
     );
   }
 
   const sp = await searchParams;
   const range: RangeValue = (RANGES.find((r) => r.value === sp.range)?.value ?? "30") as RangeValue;
-  const closer = sp.closer?.trim() || null;
+  const view: "closers" | "setters" = sp.view === "setters" ? "setters" : "closers";
+  // `closer` is the pre-setters URL param — still honoured for old links.
+  const person = (sp.person ?? (view === "closers" ? sp.closer : undefined))?.trim() || null;
+  const closer = person;
 
   let data;
+  let setterData;
   try {
-    data = await loadDashboard(range, closer);
+    if (view === "setters") setterData = await loadSetterDashboard(range, person);
+    else data = await loadDashboard(range, closer);
   } catch (e) {
     console.error("Dashboard load error:", e);
     return (
@@ -67,8 +62,10 @@ export default async function DashboardPage({
     );
   }
 
-  const t = data.totals;
-  const rangeText = data.from ? `${plDate(data.from)} – ${plDate(data.to)}` : `do ${plDate(data.to)}`;
+  const meta = (setterData ?? data)!;
+  const rangeText = meta.from ? `${plDate(meta.from)} – ${plDate(meta.to)}` : `do ${plDate(meta.to)}`;
+  const people = setterData ? setterData.setters : data!.closers;
+  const reportCount = meta.reports;
 
   return (
     <main className="relative min-h-dvh">
@@ -80,17 +77,19 @@ export default async function DashboardPage({
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-3">
             <Badge variant="outline" className="rounded-full px-3 py-1 font-mono text-[11px] tracking-wider uppercase">
-              Dashboard EOD · Closerzy
+              Dashboard EOD · {view === "setters" ? "Setterzy" : "Closerzy"}
             </Badge>
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Co mówią closerzy</h1>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              {view === "setters" ? "Co mówią setterzy" : "Co mówią closerzy"}
+            </h1>
             <p className="text-muted-foreground text-sm">
-              {rangeText} · {data.reports} {data.reports === 1 ? "raport" : "raportów"}
-              {closer ? ` · ${closer}` : ""}
+              {rangeText} · {reportCount} {reportCount === 1 ? "raport" : "raportów"}
+              {person ? ` · ${person}` : ""}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href="/">Formularz</Link>
+              <Link href="/">Formularze</Link>
             </Button>
             <form action={logout}>
               <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">
@@ -100,8 +99,22 @@ export default async function DashboardPage({
           </div>
         </header>
 
-        <Filters ranges={RANGES} range={range} closers={data.closers} closer={closer} />
+        <Filters ranges={RANGES} range={range} view={view} people={people} person={person} />
 
+        {setterData ? (
+          <SettersView data={setterData} />
+        ) : (
+          <ClosersView data={data!} />
+        )}
+      </div>
+    </main>
+  );
+}
+
+function ClosersView({ data }: { data: Awaited<ReturnType<typeof loadDashboard>> }) {
+  const t = data.totals;
+  return (
+    <>
         {t.booked === 0 ? (
           <Card>
             <CardContent className="text-muted-foreground py-10 text-center text-sm">
@@ -160,7 +173,7 @@ export default async function DashboardPage({
                 <CardDescription>Najnowsze na górze.</CardDescription>
               </CardHeader>
               <CardContent className="pt-5">
-                <Tabs defaultValue="pains">
+                <Tabs key="closers" defaultValue="pains">
                   <div className="-mx-1 overflow-x-auto px-1 pb-1">
                     <TabsList>
                       <TabsTrigger value="pains">Bóle ({data.texts.pains.length})</TabsTrigger>
@@ -182,85 +195,6 @@ export default async function DashboardPage({
             </Card>
           </>
         )}
-      </div>
-    </main>
-  );
-}
-
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <Card className="gap-1 py-4">
-      <CardContent className="space-y-1 px-4">
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <p className="text-2xl font-semibold tracking-tight">{value}</p>
-        {sub && <p className="text-muted-foreground truncate text-xs">{sub}</p>}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ChartCard({
-  title,
-  description,
-  className,
-  children,
-}: {
-  title: string;
-  description?: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className={cn("min-w-0 gap-4", className)}>
-      <CardHeader>
-        <CardTitle className="text-base tracking-tight">{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
-  );
-}
-
-const FEED_LIMIT = 60;
-
-function Feed({ items, extraLabel, quote }: { items: TextItem[]; extraLabel?: string; quote?: boolean }) {
-  if (!items.length) return <p className="text-muted-foreground py-8 text-center text-sm">Brak wpisów w tym okresie.</p>;
-  return (
-    <div>
-      <ul className="max-h-[36rem] divide-y overflow-y-auto pr-2">
-        {items.slice(0, FEED_LIMIT).map((it) => (
-          <li key={it.id} className="space-y-1.5 py-4 first:pt-3">
-            <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-              <span className="tabular-nums">{plDate(it.date)}</span>
-              <span aria-hidden>·</span>
-              <span>{it.closer}</span>
-              {it.prospect && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span className="text-foreground font-medium">{it.prospect}</span>
-                </>
-              )}
-              {it.outcome && (
-                <Badge variant="outline" className={cn("font-normal", OUTCOME_TONE[it.outcome])}>{it.outcomeLabel}</Badge>
-              )}
-            </div>
-            <p className={cn("text-[15px] leading-relaxed whitespace-pre-line", quote && "border-l-2 pl-3 italic")}>
-              {quote ? `„${it.text}”` : it.text}
-            </p>
-            {it.extra && (
-              <p className="text-muted-foreground text-sm whitespace-pre-line">
-                {extraLabel && <span className="font-medium">{extraLabel}: </span>}
-                {it.extra}
-              </p>
-            )}
-          </li>
-        ))}
-      </ul>
-      {items.length > FEED_LIMIT && (
-        <p className="text-muted-foreground pt-3 text-xs">
-          Pokazano {FEED_LIMIT} z {items.length}. Zawęź zakres dat lub użyj zapytań z <code>supabase/queries/</code>.
-        </p>
-      )}
-    </div>
+    </>
   );
 }

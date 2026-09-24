@@ -4,8 +4,8 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Raport EOD — Closerzy",
-  description: "Codzienny raport z rozmów sprzedażowych.",
+  title: "Raport EOD",
+  description: "Codzienny raport closerów i setterów.",
   robots: { index: false, follow: false },
 };
 

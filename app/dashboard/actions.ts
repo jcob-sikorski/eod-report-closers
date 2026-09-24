@@ -22,7 +22,9 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     path: "/dashboard",
     maxAge: 60 * 60 * 24 * 30,
   });
-  redirect("/dashboard");
+  // Keep the filters from the link the person opened (only our own query string).
+  const next = String(formData.get("next") ?? "");
+  redirect(/^\?[\w=&%.+-]*$/.test(next) ? `/dashboard${next}` : "/dashboard");
 }
 
 export async function logout() {
