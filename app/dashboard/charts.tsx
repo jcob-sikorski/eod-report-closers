@@ -90,10 +90,10 @@ type Variant = {
 
 const VARIANTS = {
   closer: {
-    aria: "Show rate i close rate w kolejnych dniach",
+    aria: "Show rate w kolejnych dniach",
+    // Close rate hidden: EOD records the outcome on the call day, so later sales never show up here.
     series: [
       { key: "show", label: "Show rate", color: "var(--series-1)", num: "held", den: "booked" },
-      { key: "close", label: "Close rate", color: "var(--series-2)", num: "won", den: "held" },
     ],
     counts: [
       { key: "booked", label: "Umówione" },

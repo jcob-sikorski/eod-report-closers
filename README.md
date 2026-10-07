@@ -1,4 +1,4 @@
-# Raport EOD — Closerzy
+# Raport EOD — Closerzy / Setterzy
 
 Formularz Next.js (App Router), w którym closerzy na koniec dnia dodają **kartę dla każdej rozmowy** (wynik, sytuacja leada, główne bóle, obiekcje, czego brakowało do zakupu, następny krok…) oraz **3 wnioski z dnia**. Dane trafiają do Supabase: `eod_reports` (1 wiersz na dzień) i `eod_calls` (1 wiersz na rozmowę). Widok `eod_daily_stats` liczy show rate i close rate per dzień i closer.
 

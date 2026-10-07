@@ -28,7 +28,7 @@ export default function Home() {
       <div className="mx-auto w-full max-w-2xl px-4 pt-12 pb-24 sm:pt-16">
         <header className="mb-8 space-y-3">
           <Badge variant="outline" className="rounded-full px-3 py-1 font-mono text-[11px] tracking-wider uppercase">
-            Raport EOD
+            Raport EOD · Closerzy / Setterzy
           </Badge>
           <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Kim dziś jesteś?</h1>
           <p className="text-muted-foreground text-pretty">Wybierz swoją rolę, żeby wypełnić raport na koniec dnia.</p>

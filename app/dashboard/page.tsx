@@ -77,7 +77,7 @@ export default async function DashboardPage({
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-3">
             <Badge variant="outline" className="rounded-full px-3 py-1 font-mono text-[11px] tracking-wider uppercase">
-              Dashboard EOD · {view === "setters" ? "Setterzy" : "Closerzy"}
+              Dashboard EOD · Closerzy / Setterzy
             </Badge>
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
               {view === "setters" ? "Co mówią setterzy" : "Co mówią closerzy"}
@@ -124,17 +124,16 @@ function ClosersView({ data }: { data: Awaited<ReturnType<typeof loadDashboard>>
         ) : (
           <>
             {/* KPIs */}
-            <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+            <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
               <Stat label="Umówione rozmowy" value={String(t.booked)} sub={`${t.noShow} no-show · ${t.paid} zapłacone`} />
               <Stat label="Show rate" value={pct(t.showRate)} sub={`${t.held} z ${t.booked} odbytych`} />
-              <Stat label="Close rate" value={pct(t.closeRate)} sub={`${t.won} z ${t.held} odbytych`} />
               <Stat label="Niezakwalifikowani" value={pct(t.dqRate)} sub={`${t.disqualified} z ${t.held} odbytych`} />
               <Stat label="Śr. dopasowanie" value={num(t.avgFit)} sub="w skali 1–5" />
               <Stat label="Śr. intencja zakupu" value={num(t.avgIntent)} sub="w skali 1–5" />
             </section>
 
             <section className="grid gap-4 lg:grid-cols-3">
-              <ChartCard className="lg:col-span-2" title="Show rate i close rate" description="Dzień po dniu. Close rate liczony od odbytych rozmów.">
+              <ChartCard className="lg:col-span-2" title="Show rate" description="Dzień po dniu.">
                 <TrendChart points={data.trend} />
               </ChartCard>
               <ChartCard title="Wyniki rozmów" description={`Wszystkie umówione rozmowy (${t.booked}).`}>
